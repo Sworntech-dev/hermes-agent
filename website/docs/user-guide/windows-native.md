@@ -297,7 +297,16 @@ You hit a shebang-script invocation that bypassed the `.cmd` shim. Hermes resolv
 Your download of `install.ps1` picked up a UTF-8 BOM. The `irm | iex` form strips BOMs automatically; `[scriptblock]::Create((irm ...))` does not. Re-run with the simple `irm | iex` form, or download the script manually and save it without a BOM via `[IO.File]::WriteAllText($path, $text, (New-Object Text.UTF8Encoding $false))`.
 
 **Corporate TLS proxy or private CA errors.**
-On corporate-managed Windows machines, Python packages and Node tooling may not automatically trust your organization's root CA. If HTTPS requests fail with certificate verification errors, ask your IT team for the PEM CA bundle and point Hermes, Python, and Node at it:
+On corporate-managed Windows machines, your organization's root CA may already be installed in the Windows Root / CA stores. Some stdlib Windows trust paths can use those stores, but Python packages, `certifi`, Node, and other OpenSSL-backed tooling may still use their own trust bundle and fail with certificate verification errors.
+
+For Hermes' Python venv, install `pip-system-certs`. It auto-activates when installed through its `.pth` startup hook; your code does not need to import it:
+
+```bash
+cd "%LOCALAPPDATA%\hermes"
+./bin/uv.exe pip install --python "./hermes-agent/venv/Scripts/python.exe" pip-system-certs
+```
+
+If a tool or library explicitly supports PEM bundle overrides, ask your IT team for the CA bundle and set only the variables that path consumes:
 
 ```powershell
 $env:HERMES_CA_BUNDLE = "C:\path\to\corporate-ca.pem"
